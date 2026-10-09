@@ -29,24 +29,17 @@ jobs:
         with:
           channel: stable
 
-      - name: Generate platform folders
+      - name: Generate Flutter platforms
         run: flutter create --platforms=android,ios,web,windows,macos .
 
-      - name: Prepare Doot source
+      - name: Prepare application source
         shell: bash
         run: |
           mkdir -p lib
           cp main.dart lib/main.dart
           cp firebase_options.dart lib/firebase_options.dart
 
-          sed -i \
-            "s/web.apiKey/'AIzaSyA0cx3zs7ronUP_Nh1d-H-ZjVfDGrECMI_g'/g; \
-             s/web.messagingSenderId/'771238210735'/g; \
-             s/web.projectId/'doot-delivery'/g; \
-             s/web.storageBucket/'doot-delivery.firebasestorage.app'/g" \
-            lib/firebase_options.dart
-
-      - name: Configure Android SDK and Gradle
+      - name: Configure Android SDK
         shell: bash
         run: |
           if [ -f android/app/build.gradle.kts ]; then
@@ -59,12 +52,19 @@ jobs:
           fi
 
           touch android/gradle.properties
-          if ! grep -q '^org.gradle.vfs.watch=false$' android/gradle.properties; then
+          grep -q '^org.gradle.vfs.watch=false$' android/gradle.properties || \
             echo 'org.gradle.vfs.watch=false' >> android/gradle.properties
-          fi
 
-      - name: Install dependencies
+      - name: Install Flutter dependencies
         run: flutter pub get
+
+      - name: Verify Firebase API key
+        shell: bash
+        run: |
+          grep -q "apiKey: 'AIzaSyA0cx3zs7ronUP_Nh1dH-ZjVfDGrECMI_g'" lib/firebase_options.dart || {
+            echo "Firebase API key does not match the expected key."
+            exit 1
+          }
 
       - name: Update plugin compile SDK
         shell: bash
@@ -74,27 +74,25 @@ jobs:
           import re
 
           root = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
-          if root.exists():
-              for p in root.glob("*/android/build.gradle*"):
-                  try:
-                      lines = p.read_text().splitlines(True)
-                      updated = []
-                      for line in lines:
-                          if "compileSdk" in line:
-                              line = re.sub(
-                                  r'(compileSdk(?:Version)?\s*(?:=\s*)?)(?:flutter\.compileSdkVersion|\d+)',
-                                  r'\g<1>36',
-                                  line
-                              )
-                          updated.append(line)
-                      p.write_text("".join(updated))
-                  except (OSError, UnicodeError):
-                      pass
+          if not root.exists():
+              raise SystemExit("Pub cache not found")
 
-          print("Plugin SDK configuration checked.")
+          for p in root.glob("*/android/build.gradle*"):
+              try:
+                  content = p.read_text()
+                  content = re.sub(
+                      r'(compileSdk(?:Version)?\s*(?:=\s*)?)(?:flutter\.compileSdkVersion|\d+)',
+                      r'\g<1>36',
+                      content
+                  )
+                  p.write_text(content)
+              except (OSError, UnicodeError):
+                  pass
+
+          print("Plugin compile SDK update completed.")
           PY
 
-      - name: Build Android APK
+      - name: Build release APK
         run: flutter build apk --release
 
       - name: Upload APK
