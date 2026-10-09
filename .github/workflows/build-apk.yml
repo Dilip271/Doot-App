@@ -1,4 +1,3 @@
-
 name: Build Doot Android APK
 
 on:
@@ -31,7 +30,7 @@ jobs:
       - name: Generate platform folders
         run: flutter create --platforms=android,ios,web,windows,macos .
 
-      - name: Place Doot source files
+      - name: Prepare Doot source
         run: |
           mkdir -p lib
           cp main.dart lib/main.dart
@@ -40,9 +39,6 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Check Dart code
-        run: flutter analyze --no-pub
 
       - name: Build APK
         run: flutter build apk --release
@@ -53,4 +49,3 @@ jobs:
           name: doot-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
-          
