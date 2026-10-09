@@ -24,7 +24,7 @@ class DefaultFirebaseOptions {
 
   // Existing Doot Firebase Web configuration.
   static const web = FirebaseOptions(
-    apiKey: 'AIzaSyA0cx3zs7ronUP_Nh1d-H-ZjVfDGrECMI_g',
+    apiKey: 'AIzaSyA0cx3zs7ronUP_Nh1dH-ZjVfDGrECMI_g',
     appId: '1:771238210735:web:82fc817bd02cdde8ed385a',
     messagingSenderId: '771238210735',
     projectId: 'doot-delivery',
