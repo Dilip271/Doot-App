@@ -1,9 +1,11 @@
+
 name: Build Doot Android APK
 
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -30,17 +32,42 @@ jobs:
       - name: Generate platform folders
         run: flutter create --platforms=android,ios,web,windows,macos .
 
+      - name: Set Android SDK version
+        shell: bash
+        run: |
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i -E 's/compileSdk = .*/compileSdk = 36/' android/app/build.gradle.kts
+            grep -n 'compileSdk' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i -E 's/compileSdkVersion .*/compileSdkVersion 36/' android/app/build.gradle
+            grep -n 'compileSdk' android/app/build.gradle
+          else
+            echo "ERROR: Android app Gradle file not found"
+            exit 1
+          fi
+
       - name: Prepare Doot source
+        shell: bash
         run: |
           mkdir -p lib
           cp main.dart lib/main.dart
           cp firebase_options.dart lib/firebase_options.dart
-          sed -i "s/web.apiKey/'AIzaSyA0cx3zs7ronUP_Nh1d-H-ZjVfDGrECMI_g'/g; s/web.messagingSenderId/'771238210735'/g; s/web.projectId/'doot-delivery'/g; s/web.storageBucket/'doot-delivery.firebasestorage.app'/g" lib/firebase_options.dart
+
+          sed -i \
+            "s/web.apiKey/'AIzaSyA0cx3zs7ronUP_Nh1d-H-ZjVfDGrECMI_g'/g; \
+             s/web.messagingSenderId/'771238210735'/g; \
+             s/web.projectId/'doot-delivery'/g; \
+             s/web.storageBucket/'doot-delivery.firebasestorage.app'/g" \
+            lib/firebase_options.dart
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
+      - name: Check Flutter source
+        run: flutter analyze --no-pub
+        continue-on-error: true
+
+      - name: Build Android APK
         run: flutter build apk --release
 
       - name: Upload APK
@@ -49,3 +76,4 @@ jobs:
           name: doot-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+          
