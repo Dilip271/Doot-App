@@ -12,6 +12,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -29,15 +30,19 @@ jobs:
 
       - name: Generate platform folders
         run: flutter create --platforms=android,ios,web,windows,macos .
-      
+
       - name: Place Doot source files
         run: |
           mkdir -p lib
           cp main.dart lib/main.dart
           cp firebase_options.dart lib/firebase_options.dart
-          
+          sed -i "s/web.apiKey/'AIzaSyA0cx3zs7ronUP_Nh1d-H-ZjVfDGrECMI_g'/g; s/web.messagingSenderId/'771238210735'/g; s/web.projectId/'doot-delivery'/g; s/web.storageBucket/'doot-delivery.firebasestorage.app'/g" lib/firebase_options.dart
+
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Check Dart code
+        run: flutter analyze --no-pub
 
       - name: Build APK
         run: flutter build apk --release
@@ -47,4 +52,5 @@ jobs:
         with:
           name: doot-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
           
