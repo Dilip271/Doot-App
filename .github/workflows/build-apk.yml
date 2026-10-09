@@ -29,7 +29,13 @@ jobs:
 
       - name: Generate platform folders
         run: flutter create --platforms=android,ios,web,windows,macos .
-
+      
+      - name: Place Doot source files
+        run: |
+          mkdir -p lib
+          cp main.dart lib/main.dart
+          cp firebase_options.dart lib/firebase_options.dart
+          
       - name: Install dependencies
         run: flutter pub get
 
